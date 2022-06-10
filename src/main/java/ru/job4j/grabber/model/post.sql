@@ -1,8 +1,8 @@
 create database sql schema;
 create table post(
 id serial primary key,
-name varchar(50),
-text varchar(50),
-link varchar(50),
+name varchar(250),
+description text,
+link varchar(250),
 created timestamp
 )
