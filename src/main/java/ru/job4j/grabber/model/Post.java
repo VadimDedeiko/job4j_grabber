@@ -8,7 +8,7 @@ public class Post {
     private String title;
     private String link;
     private String description;
-    private LocalDateTime created;
+     private LocalDateTime created;
 
     public Post() {
     }
