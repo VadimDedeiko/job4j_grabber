@@ -7,12 +7,16 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import ru.job4j.grabber.model.Post;
 import ru.job4j.grabber.utils.DateTimeParser;
+import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class HabrCareerParse implements Parse {
 
+    public static final int PAGES = 5;
     private final DateTimeParser dateTimeParser;
     private static final String SOURCE_LINK = "https://career.habr.com";
 
@@ -50,8 +54,33 @@ public class HabrCareerParse implements Parse {
         System.out.printf(stringBuilder.toString());
     }
 
+    Post getPostFromElement(Element element) throws IOException {
+        HabrCareerDateTimeParser parser = new HabrCareerDateTimeParser();
+        Element titleElement = element.select(".vacancy-card__title").first();
+        Element linkElement = titleElement.child(0);
+        String link = linkElement.attr("href");
+        String vacancyName = titleElement.text();
+        Element titleElementDate = element.select(".vacancy-card__date").first();
+        Element linkElementDate = titleElementDate.child(0);
+        String description = retrieveDescription(link);
+        String linkDate = linkElementDate.attr("datetime");
+        LocalDateTime created = parser.parse(linkDate);
+        return new Post(vacancyName, link, description, created);
+    }
+
     @Override
-    public List<Post> list(String link) {
-        return null;
+    public List<Post> list(String link) throws IOException {
+        List<Post> list = new ArrayList();
+        Post post = null;
+        for (int index = 1; index <= PAGES; index++) {
+            Connection connection = Jsoup.connect(link + "?page=" + index);
+            Document document = connection.get();
+            Elements rows = document.select(".vacancy-card__inner");
+            for (Element element : rows) {
+                post = getPostFromElement(element);
+                list.add(post);
+            }
+        }
+        return list;
     }
 }
