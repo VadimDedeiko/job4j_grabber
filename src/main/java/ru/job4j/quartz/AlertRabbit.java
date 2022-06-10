@@ -57,6 +57,7 @@ public class AlertRabbit {
             try (PreparedStatement ps = connection
                     .prepareStatement("insert into rabbit(created_date) values (?);")) {
                 ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+                ps.execute();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
