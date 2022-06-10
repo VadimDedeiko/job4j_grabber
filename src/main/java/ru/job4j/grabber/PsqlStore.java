@@ -14,7 +14,7 @@ public class PsqlStore implements Store, AutoCloseable {
     private Connection cnn;
 
     public PsqlStore(Properties cfg) {
-        try (InputStream in = PsqlStore.class.getClassLoader().getResourceAsStream("rabbit.properties")) {
+        try (InputStream in = PsqlStore.class.getClassLoader().getResourceAsStream("app.properties")) {
             cfg.load(in);
         } catch (IOException e) {
             e.printStackTrace();
@@ -55,11 +55,7 @@ public class PsqlStore implements Store, AutoCloseable {
         )) {
             ResultSet resultSet = ps.executeQuery();
             while (resultSet.next()) {
-                post = new Post(resultSet.getInt("id"),
-                        resultSet.getString("name"),
-                        resultSet.getString("text"),
-                        resultSet.getString("link"),
-                        resultSet.getTimestamp("created").toLocalDateTime());
+                post = setPost(resultSet);
                 postList.add(post);
             }
         } catch (SQLException e) {
@@ -76,12 +72,7 @@ public class PsqlStore implements Store, AutoCloseable {
             ps.setInt(1, id);
             ResultSet resultSet = ps.executeQuery();
             if (resultSet.next()) {
-                post = new Post(resultSet.getInt("id"),
-                        resultSet.getString("name"),
-                        resultSet.getString("text"),
-                        resultSet.getString("link"),
-                        resultSet.getTimestamp("created").toLocalDateTime()
-                );
+                post = setPost(resultSet);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -94,5 +85,14 @@ public class PsqlStore implements Store, AutoCloseable {
         if (cnn != null) {
             cnn.close();
         }
+    }
+
+    private Post setPost(ResultSet resultSet) throws SQLException {
+        return new Post(resultSet.getInt("id"),
+                resultSet.getString("name"),
+                resultSet.getString("text"),
+                resultSet.getString("link"),
+                resultSet.getTimestamp("created").toLocalDateTime()
+        );
     }
 }
