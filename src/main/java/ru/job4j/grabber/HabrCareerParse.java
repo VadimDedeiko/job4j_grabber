@@ -26,19 +26,24 @@ public class HabrCareerParse implements Parse {
         this.dateTimeParser = dateTimeParser;
     }
 
-    public String retrieveDescription(String link) throws IOException {
+    public String retrieveDescription(String link) {
         Connection connection = Jsoup.connect(link);
-        Document document = connection.get();
+        Document document = null;
+        try {
+            document = connection.get();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         Element elements = document.selectFirst(".style-ugc");
         return elements.wholeText();
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         HabrCareerParse habrCareerParse = new HabrCareerParse(new HabrCareerDateTimeParser());
         habrCareerParse.list(PAGE_LINK).forEach(System.out::println);
     }
 
-    Post getPostFromElement(Element element) throws IOException {
+    Post getPostFromElement(Element element) {
         Element titleElement = element.select(".vacancy-card__title").first();
         Element linkElement = titleElement.child(0);
         String link = SOURCE_LINK + linkElement.attr("href");
@@ -52,12 +57,17 @@ public class HabrCareerParse implements Parse {
     }
 
     @Override
-    public List<Post> list(String link) throws IOException {
+    public List<Post> list(String link) {
         List<Post> list = new ArrayList();
         Post post = null;
         for (int index = 1; index <= PAGES; index++) {
             Connection connection = Jsoup.connect(link + "?page=" + index);
-            Document document = connection.get();
+            Document document = null;
+            try {
+                document = connection.get();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             Elements rows = document.select(".vacancy-card__inner");
             for (Element element : rows) {
                 post = getPostFromElement(element);

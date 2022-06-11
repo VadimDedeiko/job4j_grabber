@@ -26,7 +26,7 @@ public class PsqlStore implements Store, AutoCloseable {
         try (PsqlStore psqlStore = new PsqlStore(cfg)) {
             DateTimeParser dateTimeParser = new HabrCareerDateTimeParser();
             HabrCareerParse parse = new HabrCareerParse(dateTimeParser);
-            List<Post> list = parse.list("https://career.habr.com//vacancies/java_developer");
+            List<Post> list = parse.list(cfg.getProperty("link.habr"));
             list.forEach(psqlStore::save);
             List<Post> listGetAll = psqlStore.getAll();
             listGetAll.forEach(System.out::println);
@@ -50,7 +50,7 @@ public class PsqlStore implements Store, AutoCloseable {
     @Override
     public void save(Post post) {
         try (PreparedStatement ps = cnn.prepareStatement(
-                "insert into post(name,description,link,created) values (?,?,?,?);"
+                "INSERT INTO post(name,description,link,created) values (?,?,?,?) ON CONFLICT (link) DO NOTHING;"
         )) {
             ps.setString(1, post.getTitle());
             ps.setString(2, post.getDescription());
