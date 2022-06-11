@@ -16,23 +16,25 @@ public class PsqlStore implements Store, AutoCloseable {
     private Connection cnn;
 
     public static void main(String[] args) throws Exception {
-        PsqlStore psqlStore = new PsqlStore(new Properties());
-        DateTimeParser dateTimeParser = new HabrCareerDateTimeParser();
-        HabrCareerParse parse = new HabrCareerParse(dateTimeParser);
-        List<Post> list = parse.list("https://career.habr.com//vacancies/java_developer");
-        list.forEach(psqlStore::save);
-        List<Post> listGetAll = psqlStore.getAll();
-        listGetAll.forEach(System.out::println);
-        System.out.println(psqlStore.findById(3));
-        psqlStore.close();
-    }
-
-    public PsqlStore(Properties cfg) {
-        try (InputStream in = PsqlStore.class.getClassLoader().getResourceAsStream("app.properties")) {
+        Properties cfg = new Properties();
+        try (InputStream in = PsqlStore.class.getClassLoader()
+                .getResourceAsStream("app.properties")) {
             cfg.load(in);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        try (PsqlStore psqlStore = new PsqlStore(cfg)) {
+            DateTimeParser dateTimeParser = new HabrCareerDateTimeParser();
+            HabrCareerParse parse = new HabrCareerParse(dateTimeParser);
+            List<Post> list = parse.list("https://career.habr.com//vacancies/java_developer");
+            list.forEach(psqlStore::save);
+            List<Post> listGetAll = psqlStore.getAll();
+            listGetAll.forEach(System.out::println);
+            System.out.println(psqlStore.findById(3));
+        }
+    }
+
+    public PsqlStore(Properties cfg) {
         try {
             Class.forName(cfg.getProperty("jdbc.driver"));
             cnn = DriverManager.getConnection(
