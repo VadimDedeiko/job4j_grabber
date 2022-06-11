@@ -57,18 +57,14 @@ public class Grabber implements Grab {
             JobDataMap map = context.getJobDetail().getJobDataMap();
             Store store = (Store) map.get("store");
             Parse parse = (Parse) map.get("parse");
-            try {
-                List<Post> list = parse.list(CFG.getProperty("link.habr"));
-                list.forEach(post -> {
-                    try {
-                        store.save(post);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                });
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            List<Post> list = parse.list(CFG.getProperty("link.habr"));
+            list.forEach(post -> {
+                try {
+                    store.save(post);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 
