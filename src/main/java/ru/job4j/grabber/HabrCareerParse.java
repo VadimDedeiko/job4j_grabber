@@ -27,7 +27,7 @@ public class HabrCareerParse implements Parse {
     }
 
     public String retrieveDescription(String link) throws IOException {
-        Connection connection = Jsoup.connect(SOURCE_LINK + link);
+        Connection connection = Jsoup.connect(link);
         Document document = connection.get();
         Element elements = document.selectFirst(".style-ugc");
         return elements.wholeText();
@@ -41,7 +41,7 @@ public class HabrCareerParse implements Parse {
     Post getPostFromElement(Element element) throws IOException {
         Element titleElement = element.select(".vacancy-card__title").first();
         Element linkElement = titleElement.child(0);
-        String link = linkElement.attr("href");
+        String link = SOURCE_LINK + linkElement.attr("href");
         String vacancyName = titleElement.text();
         Element titleElementDate = element.select(".vacancy-card__date").first();
         Element linkElementDate = titleElementDate.child(0);
