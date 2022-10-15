@@ -1,5 +1,7 @@
 package ru.job4j.grabber;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,8 +21,8 @@ public class HabrCareerParse implements Parse {
     private static final int PAGES = 5;
     private final DateTimeParser dateTimeParser;
     private static final String SOURCE_LINK = "https://career.habr.com";
-
     private static final String PAGE_LINK = String.format("%s/vacancies/java_developer", SOURCE_LINK);
+    private static final Logger LOG = LogManager.getLogger(HabrCareerParse.class.getName());
 
     public HabrCareerParse(DateTimeParser dateTimeParser) {
         this.dateTimeParser = dateTimeParser;
@@ -32,7 +34,7 @@ public class HabrCareerParse implements Parse {
         try {
             document = connection.get();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.debug("Failed or aborted I/O operations", e);
         }
         Element elements = document.selectFirst(".style-ugc");
         return elements.wholeText();
@@ -58,20 +60,25 @@ public class HabrCareerParse implements Parse {
 
     @Override
     public List<Post> list(String link) {
-        List<Post> list = new ArrayList();
-        Post post = null;
+        List<Post> list = new ArrayList<>();
+        Post post;
         for (int index = 1; index <= PAGES; index++) {
             Connection connection = Jsoup.connect(link + "?page=" + index);
             Document document = null;
             try {
                 document = connection.get();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.debug("Failed or aborted I/O operations", e);
             }
-            Elements rows = document.select(".vacancy-card__inner");
-            for (Element element : rows) {
-                post = getPostFromElement(element);
-                list.add(post);
+            Elements rows = null;
+            if (document != null) {
+                rows = document.select(".vacancy-card__inner");
+            }
+            if (rows != null) {
+                for (Element element : rows) {
+                    post = getPostFromElement(element);
+                    list.add(post);
+                }
             }
         }
         return list;

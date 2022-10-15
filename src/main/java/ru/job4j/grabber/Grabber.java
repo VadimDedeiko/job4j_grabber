@@ -1,5 +1,7 @@
 package ru.job4j.grabber;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import ru.job4j.grabber.model.Post;
@@ -10,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
@@ -20,6 +23,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 public class Grabber implements Grab {
     private final Properties cfg = new Properties();
+    private static final Logger LOG = LogManager.getLogger(Grabber.class.getName());
 
     public Store store() {
         return new PsqlStore(cfg);
@@ -32,7 +36,8 @@ public class Grabber implements Grab {
     }
 
     public void cfg() throws IOException {
-        try (InputStream in = Grabber.class.getClassLoader().getResourceAsStream("app.properties")) {
+        try (InputStream in = Grabber.class.getClassLoader()
+                .getResourceAsStream("app.properties")) {
             cfg.load(in);
         }
     }
@@ -57,7 +62,7 @@ public class Grabber implements Grab {
             try {
                 grabber.cfg();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.debug("Failed or aborted I/O operations", e);
             }
             JobDataMap map = context.getJobDetail().getJobDataMap();
             Store store = (Store) map.get("store");
@@ -67,7 +72,7 @@ public class Grabber implements Grab {
                 try {
                     store.save(post);
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    LOG.debug("Database access error or other errors", e);
                 }
             });
         }
@@ -81,15 +86,18 @@ public class Grabber implements Grab {
                     try (OutputStream out = socket.getOutputStream()) {
                         out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
                         for (Post post : store.getAll()) {
-                            out.write(post.toString().getBytes());
+                            String postStr = " ".repeat(5) + post.toString();
+                            out.write(postStr.getBytes(Charset.forName("Windows-1251")));
                             out.write(System.lineSeparator().getBytes());
+                            out.write("___".repeat(20).getBytes());
+                            out.write(System.lineSeparator().repeat(2).getBytes());
                         }
                     } catch (IOException io) {
-                        io.printStackTrace();
+                        LOG.debug("Failed or aborted I/O operations", io);
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.debug("Error", e);
             }
         }).start();
     }

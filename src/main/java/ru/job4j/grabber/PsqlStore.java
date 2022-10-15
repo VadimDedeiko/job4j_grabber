@@ -1,5 +1,7 @@
 package ru.job4j.grabber;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import ru.job4j.grabber.model.Post;
 import ru.job4j.grabber.utils.DateTimeParser;
 import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
@@ -12,8 +14,8 @@ import java.util.List;
 import java.util.Properties;
 
 public class PsqlStore implements Store, AutoCloseable {
-
     private Connection cnn;
+    private static final Logger LOG = LogManager.getLogger(PsqlStore.class.getName());
 
     public static void main(String[] args) throws Exception {
         Properties cfg = new Properties();
@@ -21,7 +23,7 @@ public class PsqlStore implements Store, AutoCloseable {
                 .getResourceAsStream("app.properties")) {
             cfg.load(in);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.debug("Failed or aborted I/O operations", e);
         }
         try (PsqlStore psqlStore = new PsqlStore(cfg)) {
             DateTimeParser dateTimeParser = new HabrCareerDateTimeParser();
@@ -43,7 +45,7 @@ public class PsqlStore implements Store, AutoCloseable {
                     cfg.getProperty("jdbc.password")
             );
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Error", e);
         }
     }
 
@@ -58,13 +60,13 @@ public class PsqlStore implements Store, AutoCloseable {
             ps.setTimestamp(4, Timestamp.valueOf(post.getCreated()));
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.debug("Database access error or other errors", e);
         }
     }
 
     @Override
     public List<Post> getAll() {
-        Post post = null;
+        Post post;
         List<Post> postList = new ArrayList<>();
         try (PreparedStatement ps = cnn.prepareStatement(
                 "select * from post;"
@@ -75,7 +77,7 @@ public class PsqlStore implements Store, AutoCloseable {
                 postList.add(post);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.debug("Database access error or other errors", e);
         }
         return postList;
     }
@@ -84,14 +86,14 @@ public class PsqlStore implements Store, AutoCloseable {
     public Post findById(int id) {
         Post post = null;
         try (PreparedStatement ps =
-                     cnn.prepareStatement("select * from post where id=?;")) {
+                     cnn.prepareStatement("select * from post where id = ?;")) {
             ps.setInt(1, id);
             ResultSet resultSet = ps.executeQuery();
             if (resultSet.next()) {
                 post = setPost(resultSet);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.debug("Database access error or other errors", e);
         }
         return post;
     }
@@ -106,8 +108,8 @@ public class PsqlStore implements Store, AutoCloseable {
     private Post setPost(ResultSet resultSet) throws SQLException {
         return new Post(resultSet.getInt("id"),
                 resultSet.getString("name"),
-                resultSet.getString("description"),
                 resultSet.getString("link"),
+                resultSet.getString("description"),
                 resultSet.getTimestamp("created").toLocalDateTime()
         );
     }

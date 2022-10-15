@@ -1,5 +1,7 @@
 package ru.job4j.quartz;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -14,6 +16,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 public class AlertRabbit {
+    private static final Logger LOG = LogManager.getLogger(AlertRabbit.class.getName());
     public static void main(String[] args) {
         try {
             Properties properties = getProperties();
@@ -37,7 +40,7 @@ public class AlertRabbit {
             }
         } catch (SchedulerException | IOException | InterruptedException
                  | SQLException | ClassNotFoundException se) {
-            se.printStackTrace();
+            LOG.debug("Exception while shutting down scheduler: ", se);
         }
     }
 
@@ -59,7 +62,7 @@ public class AlertRabbit {
                 ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
                 ps.execute();
             } catch (SQLException e) {
-                e.printStackTrace();
+                LOG.error("Error executing query", e);
             }
             System.out.println("Rabbit runs here ...");
         }
